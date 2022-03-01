@@ -1,23 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim: set fileencoding=utf-8
-#*****************************************************************************#
+# *****************************************************************************#
 
 from __future__ import annotations
 
-import osmnx as ox
-import json
+import argparse
+from email.policy import default
 from pathlib import Path
 
-PALETTE_FILE = Path("base16_schemes.json")
-EXPORT_DIR = Path("export")
+import osmnx as ox
 
-
-def load_colour_palettes(palette_file: Path) -> dict[str, dict[str, str]]:
-    print("### Loading colour palettes")
-    with palette_file.open("r") as colour_scheme_file:
-        palettes = json.load(colour_scheme_file)
-    return palettes
+from palette import Palette, load_colour_palettes
 
 
 class Map:
@@ -27,12 +21,12 @@ class Map:
         self.data = []
         self.colours = []
         self.unpack_data()
-    
+
     def unpack_data(self):
         for uu, vv, kkey, ddata in self.graph.edges(keys=True, data=True):
             self.data.append(ddata)
-        
-    def apply_colour_palette(self, palette_name: str, palette: dict[str, str]):
+
+    def apply_colour_palette(self, palette_name: str, palette: Palette):
         print(f"### Applying palette {palette_name} to data")
 
         # The length is in meters
@@ -57,8 +51,8 @@ class Map:
                 color = palette["base05"]
 
             self.colours.append(color)
-    
-    def export_image(self, destination: Path, palette_name: str, palette: dict[str, str]):
+
+    def export_image(self, destination: Path, palette_name: str, palette: Palette):
         self.apply_colour_palette(palette_name, palette)
 
         print("### Generating image")
@@ -66,29 +60,57 @@ class Map:
             self.graph,
             node_size=0,
             dpi=300,
-            figsize=(33.11,46.81),
+            figsize=(9, 12),
             bgcolor=palette["base00"],
             edge_color=self.colours,
             edge_linewidth=1,
             edge_alpha=1,
-            filepath = destination,
-            show = False,
-            save = True,
-            close = True
+            filepath=destination,
+            show=False,
+            save=True,
+            close=True,
         )
+
 
 if __name__ == "__main__":
-    places = ["Grenoble, France"]
-    map = Map(places)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--places",
+        type=str,
+        nargs="+",
+        help="The place to generate the map for",
+        default="Grenoble, France",
+    )
+    parser.add_argument(
+        "--palette_file",
+        type=Path,
+        help="Path to a json file containing colour palettes",
+        default=Path("base16_schemes.json"),
+    )
+    parser.add_argument(
+        "--palette_names",
+        type=str,
+        nargs="+",
+        help="Names of the palettes to load from the palette_file",
+        default=["onedark", "github", "grayscale", "shapeshifter"],
+    )
+    parser.add_argument(
+        "--export_dir",
+        type=Path,
+        help="Path to a directory in which to place the generated maps",
+        default=Path("export"),
+    )
+    args = parser.parse_args()
 
-    EXPORT_DIR.mkdir(exist_ok=True)
+    map = Map(args.places)
 
-    palettes = load_colour_palettes(PALETTE_FILE)
+    args.export_dir.mkdir(exist_ok=True)
 
-    for selected_palette_name, selected_palette in palettes.items():
+    palettes = load_colour_palettes(args.palette_file)
+
+    for palette_name in args.palette_names:
         map.export_image(
-            destination = EXPORT_DIR / f"Grenoble_{selected_palette_name}.png",
-            palette_name = selected_palette_name,
-            palette = selected_palette
+            destination=args.export_dir / f"Grenoble_{palette_name}.png",
+            palette_name=palette_name,
+            palette=palettes[palette_name],
         )
-
