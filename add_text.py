@@ -1,6 +1,4 @@
 import argparse
-import re
-from math import ceil
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont, ImageOps

@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import argparse
-from email.policy import default
 from pathlib import Path
 
 import geopandas as gpd
