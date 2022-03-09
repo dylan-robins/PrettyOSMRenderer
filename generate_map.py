@@ -30,7 +30,9 @@ class Map:
             raise KeyError("geometries not found in street data!")
 
         self.water = ox.geometries_from_point(
-            point, tags={"water": "river"}, dist=radius,
+            point,
+            tags={"water": "river"},
+            dist=radius,
         )
 
     def unpack_data(self) -> gpd.GeoDataFrame:
@@ -38,7 +40,6 @@ class Map:
         for _, _, _, ddata in self.streets.edges(keys=True, data=True):
             data.append(ddata)
         df = gpd.GeoDataFrame(data)
-        df.to_csv("streets.csv")
         return df
 
     def apply_colour_palette(self, palette_name: str, palette: Palette):
@@ -112,7 +113,7 @@ class Map:
             dpi=600,
             save=True,
             show=False,
-            close=False,
+            close=True,
             filepath=destination,
         )
 
@@ -151,8 +152,11 @@ if __name__ == "__main__":
 
     geolocator = Nominatim(user_agent="map_plotter")
     location = geolocator.geocode(args.place)
+    place_metadata = geolocator.reverse(location.point)
 
-    map = Map((location.latitude, location.longitude), args.radius,)
+    map = Map((location.latitude, location.longitude), args.radius)
+
+    place_cleaned = args.place.replace(' ', '_').replace(',', '')
 
     args.export_dir.mkdir(exist_ok=True)
 
@@ -160,7 +164,7 @@ if __name__ == "__main__":
 
     for palette_name in args.palette_names:
         map.export_image(
-            destination=args.export_dir / f"Grenoble_{palette_name}.png",
+            destination=args.export_dir / f"{place_cleaned}_{palette_name}.png",
             palette_name=palette_name,
             palette=palettes[palette_name],
         )

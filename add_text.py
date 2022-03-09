@@ -54,7 +54,7 @@ def add_border(
     return new_im
 
 
-def add_city_name(input_image: Path, output_image: Path, palette: Palette):
+def add_city_name(input_image: Path, place_name: str, output_image: Path, palette: Palette):
 
     print(f"### Loading image from {input_image}")
     img = Image.open(input_image)
@@ -68,7 +68,7 @@ def add_city_name(input_image: Path, output_image: Path, palette: Palette):
     # portion of image width you want text width to be
     img_fraction = (W - 100) / W
     fontsize = 72
-    text = "GRENOBLE"
+    text = place_name.upper()
     font = ImageFont.truetype("fonts/Raleway.ttf", fontsize)
     while font.getsize(text)[0] < img_fraction * img.size[0]:
         # iterate until the text size is just larger than the criteria
@@ -116,6 +116,12 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
+        "--place_name",
+        type=str,
+        help="Name of the place",
+        required=True,
+    )
+    parser.add_argument(
         "--palette_file",
         type=Path,
         help="Path to a json file containing colour palettes",
@@ -138,5 +144,5 @@ if __name__ == "__main__":
     palettes = load_colour_palettes(args.palette_file)
     for image in args.image:
         add_city_name(
-            image, args.export_dir / f"{image.stem}_edited.png", palettes[args.palette]
+            image, args.place_name, args.export_dir / f"{image.stem}_edited.png", palettes[args.palette]
         )
